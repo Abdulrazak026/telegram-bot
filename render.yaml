@@ -14,7 +14,5 @@ services:
         fromSecret: REPO_NAME
       - key: ADMIN_CHAT_ID
         fromSecret: ADMIN_CHAT_ID
-      - key: RAILWAY_TOKEN
-        fromSecret: RAILWAY_TOKEN
       - key: PORT
         value: "3000"
