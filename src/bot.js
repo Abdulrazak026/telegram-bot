@@ -1,5 +1,6 @@
 const { Telegraf } = require('telegraf');
 const config = require('./config');
+const express = require('express');
 
 const bot = new Telegraf(config.telegramToken);
 
@@ -45,11 +46,16 @@ bot.command('commits', async (ctx) => {
   }
 });
 
-// Launch the bot
-bot.launch().then(() => {
-  console.log('Bot is running...');
+// Express app to handle webhook
+const app = express();
+app.use(bot.webhookCallback('/secret-path'));
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
 
-// Enable graceful stop
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+// Set webhook
+bot.telegram.setWebhook(`https://yourdomain.com/secret-path`).then(() => {
+  console.log('Webhook set successfully');
+});
