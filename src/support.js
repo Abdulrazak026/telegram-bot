@@ -1,7 +1,8 @@
-const { bot } = require('./bot'); // Ensure bot instance is imported
+// Ensure bot instance is imported correctly
+const bot = require('./bot');
 
 let supportSessions = {};
-let supportMembers = [123456789]; // Replace with actual support member user IDs
+let supportMembers = [Replace]; // Replace with actual support member user IDs
 
 const startSupportSession = (userId) => {
   supportSessions[userId] = true;

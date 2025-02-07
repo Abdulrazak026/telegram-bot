@@ -18,7 +18,7 @@ bot.start((ctx) => {
   if (isAdmin) {
     buttons.push(['🔧 Admin']);
   }
-  ctx.reply('Welcome! Please choose an option:', Markup.keyboard(buttons).resize().extra());
+  ctx.reply('Welcome! Please choose an option:', Markup.keyboard(buttons).resize());
 });
 
 bot.hears('📋 Available Tasks', (ctx) => {
@@ -38,7 +38,7 @@ bot.hears('💼 My Wallet', (ctx) => {
   const message = `💼 *Your Wallet*\n\n*Balance:* ${balance} points\n\nClick the button below to withdraw your balance.`;
   ctx.replyWithMarkdown(message, Markup.inlineKeyboard([
     Markup.button.callback('Withdraw', 'withdraw')
-  ]).extra());
+  ]));
 });
 
 bot.action('withdraw', (ctx) => {
@@ -79,7 +79,7 @@ bot.hears('🔧 Admin', (ctx) => {
     ctx.reply('Welcome Admin! Please choose an option:', Markup.keyboard([
       ['📋 Manage Tasks', '👥 Manage Users'],
       ['💸 Withdrawals', '📢 Broadcast']
-    ]).resize().extra());
+    ]).resize());
   } else {
     ctx.reply('You are not authorized to use admin commands.');
   }
@@ -150,3 +150,16 @@ bot.on('text', (ctx) => {
 
 bot.launch();
 console.log('Bot is running...');
+
+// Keep the bot running by binding to a port
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+  res.send('Bot is running...');
+});
+
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
