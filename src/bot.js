@@ -1,66 +1,126 @@
-const { Telegraf } = require('telegraf');
-const config = require('./config');
-const express = require('express');
+const { Telegraf, Markup } = require('telegraf');
+const tasks = require('./tasks');
+const users = require('./users');
+const support = require('./support');
+require('dotenv').config();
 
-const bot = new Telegraf(config.telegramToken);
+const bot = new Telegraf(process.env.TELEGRAM_TOKEN);
 
-// Middleware to check if the user is an admin
-bot.use((ctx, next) => {
-  if (ctx.from.id.toString() === config.adminChatId) {
-    return next();
-  } else {
-    ctx.reply('You are not authorized to use this bot.');
-  }
-});
-
-// Command to handle the start
+// User commands
 bot.start((ctx) => {
-  console.log('Received /start command');
-  ctx.reply('Welcome to the GitHub Telegram Bot!');
+  const userId = ctx.from.id;
+  users.addUser(userId);
+  ctx.reply('Welcome! Use /wallet to check your balance, /tasks to view available tasks, /withdraw to withdraw your balance, or /support to contact support.');
 });
 
-// Command to handle GitHub integration (example)
-bot.command('github', (ctx) => {
-  console.log('Received /github command');
-  ctx.reply('GitHub integration is not yet implemented.');
+bot.command('wallet', (ctx) => {
+  const userId = ctx.from.id;
+  const balance = users.getBalance(userId);
+  ctx.reply(`Your wallet balance is: ${balance} points.`);
 });
 
-// Command to fetch the latest commits
-bot.command('commits', async (ctx) => {
-  console.log('Received /commits command');
-  try {
-    const fetch = (await import('node-fetch')).default;
-    console.log('Fetching commits from GitHub repository:', config.githubRepo);
-    const response = await fetch(`https://api.github.com/repos/${config.githubRepo}/commits`, {
-      headers: {
-        Authorization: `Bearer ${config.githubToken}`,
-      },
-    });
-    console.log('GitHub API response status:', response.status);
-    if (!response.ok) throw new Error(`Failed to fetch commits: ${response.statusText}`);
-    const commits = await response.json();
-    const commitMessages = commits.slice(0, 5).map(commit => commit.commit.message).join('\n');
-    console.log('Fetched commits:', commitMessages);
-    ctx.reply(`Latest commits:\n${commitMessages}`);
-  } catch (error) {
-    console.error('Error fetching commits:', error);
-    ctx.reply('Failed to fetch commits.');
+bot.command('withdraw', (ctx) => {
+  ctx.reply('Choose your withdrawal method:', Markup.inlineKeyboard([
+    Markup.button.callback('Gift card', 'withdraw_giftcard'),
+    Markup.button.callback('Crypto', 'withdraw_crypto'),
+    Markup.button.callback('PayPal', 'withdraw_paypal'),
+    Markup.button.callback('Bank transfer', 'withdraw_bank'),
+  ]));
+});
+
+bot.action(/withdraw_(.+)/, (ctx) => {
+  const method = ctx.match[1];
+  const userId = ctx.from.id;
+  const balance = users.getBalance(userId);
+  if (balance > 0) {
+    users.withdraw(userId, balance);
+    ctx.reply(`Withdrawal of ${balance} points requested via ${method}.`);
+  } else {
+    ctx.reply('Insufficient balance for withdrawal.');
   }
 });
 
-// Express app to handle webhook
-const app = express();
-app.use(express.json());
-app.use(bot.webhookCallback('/secret-path'));
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+bot.command('tasks', (ctx) => {
+  const userId = ctx.from.id;
+  const availableTasks = tasks.getAvailableTasks(userId);
+  if (availableTasks.length > 0) {
+    const taskButtons = availableTasks.map(task => Markup.button.callback(task.name, `start_task_${task.id}`));
+    ctx.reply('Available tasks:', Markup.inlineKeyboard(taskButtons));
+  } else {
+    ctx.reply('No available tasks at the moment.');
+  }
 });
 
-// Set webhook
-bot.telegram.setWebhook(`https://yourdomain.com/secret-path`).then(() => {
-  console.log('Webhook set successfully');
-}).catch((err) => {
-  console.error('Error setting webhook:', err);
+bot.command('support', (ctx) => {
+  ctx.reply('Please describe your issue and our support team will get back to you.');
+  support.startSupportSession(ctx.from.id);
 });
+
+// Admin commands
+bot.command('admin', (ctx) => {
+  const userId = ctx.from.id;
+  if (users.isAdmin(userId)) {
+    ctx.reply('Welcome Admin! Use /manage_tasks to manage tasks or /manage_users to manage users.');
+  } else {
+    ctx.reply('You are not authorized to use admin commands.');
+  }
+});
+
+bot.command('manage_tasks', (ctx) => {
+  const userId = ctx.from.id;
+  if (users.isAdmin(userId)) {
+    const taskButtons = tasks.getAllTasks().map(task => Markup.button.callback(task.name, `edit_task_${task.id}`));
+    ctx.reply('Manage tasks:', Markup.inlineKeyboard(taskButtons));
+  } else {
+    ctx.reply('You are not authorized to manage tasks.');
+  }
+});
+
+bot.command('manage_users', (ctx) => {
+  const userId = ctx.from.id;
+  if (users.isAdmin(userId)) {
+    ctx.reply('Use /edit_balance user_id amount to edit user balance.');
+  } else {
+    ctx.reply('You are not authorized to manage users.');
+  }
+});
+
+bot.command('edit_balance', (ctx) => {
+  const userId = ctx.from.id;
+  if (users.isAdmin(userId)) {
+    const [command, userIdToEdit, amount] = ctx.message.text.split(' ');
+    users.editBalance(userIdToEdit, parseInt(amount));
+    ctx.reply(`User ${userIdToEdit} balance updated to ${amount} points.`);
+  } else {
+    ctx.reply('You are not authorized to edit user balances.');
+  }
+});
+
+// Task and support handlers
+bot.action(/start_task_(\d+)/, (ctx) => {
+  const taskId = ctx.match[1];
+  const userId = ctx.from.id;
+  tasks.startTask(userId, taskId, ctx);
+});
+
+bot.action(/cancel_task/, (ctx) => {
+  const userId = ctx.from.id;
+  tasks.cancelTask(userId, ctx);
+});
+
+// Support message handler
+bot.on('text', (ctx) => {
+  const userId = ctx.from.id;
+  if (support.isUserInSupportSession(userId)) {
+    support.sendMessageToSupport(userId, ctx.message.text);
+    ctx.reply('Your message has been sent to support.');
+  } else if (support.isSupportMember(userId)) {
+    const [command, userIdToReply, ...messageParts] = ctx.message.text.split(' ');
+    const message = messageParts.join(' ');
+    support.replyToUser(userIdToReply, message);
+    ctx.reply(`Reply sent to user ${userIdToReply}.`);
+  }
+});
+
+bot.launch();
+console.log('Bot is running...');
