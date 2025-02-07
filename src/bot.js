@@ -15,11 +15,13 @@ bot.use((ctx, next) => {
 
 // Command to handle the start
 bot.start((ctx) => {
+  console.log('Received /start command');
   ctx.reply('Welcome to the GitHub Telegram Bot!');
 });
 
 // Command to handle GitHub integration (example)
 bot.command('github', (ctx) => {
+  console.log('Received /github command');
   ctx.reply('GitHub integration is not yet implemented.');
 });
 
@@ -48,6 +50,7 @@ bot.command('commits', async (ctx) => {
 
 // Express app to handle webhook
 const app = express();
+app.use(express.json());
 app.use(bot.webhookCallback('/secret-path'));
 
 const PORT = process.env.PORT || 3000;
@@ -58,4 +61,6 @@ app.listen(PORT, () => {
 // Set webhook
 bot.telegram.setWebhook(`https://yourdomain.com/secret-path`).then(() => {
   console.log('Webhook set successfully');
+}).catch((err) => {
+  console.error('Error setting webhook:', err);
 });
