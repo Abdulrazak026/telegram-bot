@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: telegram-bot
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: TELEGRAM_TOKEN
+        fromSecret: TELEGRAM_TOKEN
+      - key: PERSONAL_ACCESS_TOKEN
+        fromSecret: PERSONAL_ACCESS_TOKEN
+      - key: REPO_NAME
+        fromSecret: REPO_NAME
+      - key: ADMIN_CHAT_ID
+        fromSecret: ADMIN_CHAT_ID
+      - key: RAILWAY_TOKEN
+        fromSecret: RAILWAY_TOKEN
+      - key: PORT
+        value: "3000"
