@@ -33,7 +33,7 @@ bot.action(/withdraw_(.+)/, (ctx) => {
   const userId = ctx.from.id;
   const balance = users.getBalance(userId);
   if (balance > 0) {
-    users.withdraw(userId, balance);
+    users.withdraw(userId, balance, method);
     ctx.reply(`Withdrawal of ${balance} points requested via ${method}.`);
   } else {
     ctx.reply('Insufficient balance for withdrawal.');

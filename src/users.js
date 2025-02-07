@@ -1,9 +1,9 @@
 let users = {};
-let admins = [123456789]; // Replace with actual admin user IDs
+let admins = [673973285]; // Replace with actual admin user IDs
 
 const addUser = (userId) => {
   if (!users[userId]) {
-    users[userId] = { balance: 0 };
+    users[userId] = { balance: 0, withdrawals: [] };
   }
 };
 
@@ -17,9 +17,10 @@ const addReward = (userId, amount) => {
   }
 };
 
-const withdraw = (userId, amount) => {
+const withdraw = (userId, amount, method) => {
   if (users[userId] && users[userId].balance >= amount) {
     users[userId].balance -= amount;
+    users[userId].withdrawals.push({ amount, method, date: new Date().toISOString() });
   }
 };
 
