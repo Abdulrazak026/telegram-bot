@@ -1,8 +1,10 @@
-// Ensure bot instance is imported correctly
-const bot = require('./bot');
+const { Telegraf } = require('telegraf');
+require('dotenv').config();
+
+const bot = new Telegraf(process.env.TELEGRAM_TOKEN);
 
 let supportSessions = {};
-let supportMembers = [Replace]; // Replace with actual support member user IDs
+let supportMembers = [123456789]; // Replace with actual support member user IDs
 
 const startSupportSession = (userId) => {
   supportSessions[userId] = true;

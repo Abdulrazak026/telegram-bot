@@ -1,3 +1,5 @@
+const { bot } = require('./bot');
+
 let users = {};
 let admins = [673973285]; // Replace with actual admin user IDs
 
