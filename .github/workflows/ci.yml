@@ -25,6 +25,5 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-    # Comment out or remove the Run tests step
-    # - name: Run tests
-    #   run: npm test
+    - name: Run tests
+      run: npm test
