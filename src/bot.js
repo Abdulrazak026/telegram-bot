@@ -22,6 +22,29 @@ bot.command('github', (ctx) => {
   ctx.reply('GitHub integration is not yet implemented.');
 });
 
+// Command to fetch the latest commits
+bot.command('commits', async (ctx) => {
+  console.log('Received /commits command');
+  try {
+    const fetch = (await import('node-fetch')).default;
+    console.log('Fetching commits from GitHub repository:', config.githubRepo);
+    const response = await fetch(`https://api.github.com/repos/${config.githubRepo}/commits`, {
+      headers: {
+        Authorization: `Bearer ${config.githubToken}`,
+      },
+    });
+    console.log('GitHub API response status:', response.status);
+    if (!response.ok) throw new Error(`Failed to fetch commits: ${response.statusText}`);
+    const commits = await response.json();
+    const commitMessages = commits.slice(0, 5).map(commit => commit.commit.message).join('\n');
+    console.log('Fetched commits:', commitMessages);
+    ctx.reply(`Latest commits:\n${commitMessages}`);
+  } catch (error) {
+    console.error('Error fetching commits:', error);
+    ctx.reply('Failed to fetch commits.');
+  }
+});
+
 // Launch the bot
 bot.launch().then(() => {
   console.log('Bot is running...');
