@@ -34,6 +34,12 @@ const isAdmin = (userId) => {
   return admins.includes(userId);
 };
 
+const broadcastMessage = (message) => {
+  Object.keys(users).forEach(userId => {
+    bot.telegram.sendMessage(userId, message);
+  });
+};
+
 module.exports = {
   addUser,
   getBalance,
@@ -41,4 +47,5 @@ module.exports = {
   withdraw,
   editBalance,
   isAdmin,
+  broadcastMessage,
 };
