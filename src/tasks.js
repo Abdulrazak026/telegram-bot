@@ -2,8 +2,8 @@ const users = require('./users');
 const { Markup } = require('telegraf');
 
 let tasks = [
-  { id: 1, name: 'Task 1', reward: 10 },
-  { id: 2, name: 'Task 2', reward: 20 },
+  { id: 1, title: 'Task 1', description: 'Description 1', reward: 10, duration: 60 },
+  { id: 2, title: 'Task 2', description: 'Description 2', reward: 20, duration: 120 },
 ];
 
 let activeTasks = {};
@@ -16,18 +16,43 @@ const getAllTasks = () => {
   return tasks;
 };
 
+const getTask = (taskId) => {
+  return tasks.find(t => t.id === taskId);
+};
+
+const createTask = (title, description, reward, duration) => {
+  const newTask = { id: tasks.length + 1, title, description, reward, duration };
+  tasks.push(newTask);
+  return newTask;
+};
+
+const editTask = (taskId, title, description, reward, duration) => {
+  const task = tasks.find(t => t.id === taskId);
+  if (task) {
+    task.title = title;
+    task.description = description;
+    task.reward = reward;
+    task.duration = duration;
+  }
+  return task;
+};
+
+const deleteTask = (taskId) => {
+  tasks = tasks.filter(t => t.id !== taskId);
+};
+
 const startTask = (userId, taskId, ctx) => {
   const task = tasks.find(t => t.id === parseInt(taskId));
   if (task) {
     activeTasks[userId] = task;
-    ctx.reply(`Task "${task.name}" started.`, Markup.inlineKeyboard([Markup.button.callback('Cancel', 'cancel_task')]));
+    ctx.reply(`Task "${task.title}" started.`, Markup.inlineKeyboard([Markup.button.callback('Cancel', 'cancel_task')]));
     setTimeout(() => {
       if (activeTasks[userId] && activeTasks[userId].id === task.id) {
         delete activeTasks[userId];
         users.addReward(userId, task.reward);
-        ctx.reply(`Task "${task.name}" completed! You've earned ${task.reward} points.`);
+        ctx.reply(`Task "${task.title}" completed! You've earned ${task.reward} points.`);
       }
-    }, 10000); // 10 seconds timer for demonstration
+    }, task.duration * 1000); // Task duration in seconds
   }
 };
 
@@ -43,6 +68,10 @@ const cancelTask = (userId, ctx) => {
 module.exports = {
   getAvailableTasks,
   getAllTasks,
+  getTask,
+  createTask,
+  editTask,
+  deleteTask,
   startTask,
   cancelTask,
 };
